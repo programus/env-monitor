@@ -1,0 +1,47 @@
+version: '3'
+services:
+  db:
+    image: mariadb
+    container_name: env-monitor-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root-p4ssw0rd
+      MYSQL_DATABASE: envrec
+      MYSQL_USER: envrec
+      MYSQL_PASSWORD: 3nvRec
+      TZ: Asia/Tokyo
+    volumes:
+      - ./db/mysql:/var/lib/mysql
+      - ./db/init.d:/docker-entrypoint-initdb.d
+    networks:
+      - backend
+    restart: on-failure
+    ports:
+      - 3306:3306
+    expose:
+      - 3306
+  app:
+    image: node
+    container_name: env-monitor-app
+    environment:
+      NODE_ENV: production
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: envrec
+      DB_USER: envrec
+      DB_PASSWORD: 3nvRec
+    depends_on:
+      - db
+    user: "node"
+    working_dir: /home/node/app
+    volumes:
+      - ./monitor-service:/home/node/app
+    networks:
+      - backend
+    restart: on-failure
+    ports:
+      - 3000:3000
+    expose:
+      - 3000
+    command: sh -c "yarn && npx next build && npx next start"
+networks:
+  backend:
