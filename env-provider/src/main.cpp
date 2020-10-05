@@ -3,7 +3,23 @@
 #include <ESP8266HTTPClient.h>
 #include <AHT10.h>
 
+/* definition to expand macro then apply to pragma message */
+#define VALUE_TO_STRING(x) #x
+#define VALUE(x) VALUE_TO_STRING(x)
+#define VAR_NAME_VALUE(var) #var "="  VALUE(var)
+
 #define AHT_PWR D8
+
+#ifndef WIFI_SSID
+#define WIFI_SSID ""
+#endif
+#ifndef WIFI_PASS
+#define WIFI_PASS ""
+#endif
+
+// print env var while compiling
+#pragma message(VAR_NAME_VALUE(WIFI_SSID))
+#pragma message(VAR_NAME_VALUE(WIFI_PASS))
 
 AHT10 aht(AHT10_ADDRESS_0X38);
 
@@ -29,7 +45,7 @@ void connectWifi() {
   bool on = false;
   pinMode(LED_BUILTIN, OUTPUT);
 
-  WiFi.begin("ssid", "password");
+  WiFi.begin(WIFI_SSID, WIFI_PASS);
 
   while (WiFi.status() != WL_CONNECTED)
   {
