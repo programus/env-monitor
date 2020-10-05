@@ -4,29 +4,56 @@
 #include <AHT10.h>
 
 /* definition to expand macro then apply to pragma message */
-#define VALUE_TO_STRING(x) #x
-#define VALUE(x) VALUE_TO_STRING(x)
-#define VAR_NAME_VALUE(var) #var "="  VALUE(var)
+#define DO_QUOTE(x) #x
+#define QUOTE(x) DO_QUOTE(x)
+#define VAR_NAME_VALUE(var) #var "="  QUOTE(var)
 
 #define AHT_PWR D8
 
-#ifndef WIFI_SSID
-#define WIFI_SSID ""
+#if !defined(WIFI_SSID)
+#error WIFI_SSID must be defined! 
 #endif
-#ifndef WIFI_PASS
-#define WIFI_PASS ""
+#if !defined(WIFI_PASS)
+#error WIFI_PASS must be defined! 
+#endif
+#if !defined(SERVER_HOST)
+#define SERVER_HOST "192.168.1.4"
+#endif
+#if !defined(SERVER_PORT)
+#define SERVER_PORT 3000
 #endif
 
 // print env var while compiling
 #pragma message(VAR_NAME_VALUE(WIFI_SSID))
 #pragma message(VAR_NAME_VALUE(WIFI_PASS))
+#pragma message(VAR_NAME_VALUE(SERVER_HOST))
+#pragma message(VAR_NAME_VALUE(SERVER_PORT))
 
 AHT10 aht(AHT10_ADDRESS_0X38);
+uint8_t deviceId = 0;
 
 void blinkLed(uint8_t pin, bool* pOn, long duration) {
   *pOn = !(*pOn);
   digitalWrite(pin, *pOn ? LOW : HIGH);
   delay(duration);
+}
+
+uint8_t getDeviceId() {
+  uint8_t readPins[] = {D7, D6, D5};
+  int len = sizeof(readPins) / sizeof(uint8_t);
+  pinMode(D3, OUTPUT);
+  for (int i = 0; i < len; i++) {
+    pinMode(readPins[i], INPUT);
+  }
+  digitalWrite(D3, HIGH);
+  delay(1);
+  uint8_t id = 0;
+  for (int i = 0; i < len; i++) {
+    id <<= 1;
+    id |= ~digitalRead(readPins[i]) & 1;
+  }
+  digitalWrite(D3, LOW);
+  return id;
 }
 
 void connectAht() {
@@ -45,43 +72,63 @@ void connectWifi() {
   bool on = false;
   pinMode(LED_BUILTIN, OUTPUT);
 
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
+  WiFi.begin(QUOTE(WIFI_SSID), QUOTE(WIFI_PASS));
 
   while (WiFi.status() != WL_CONNECTED)
   {
-    blinkLed(LED_BUILTIN, &on, 500);
+    blinkLed(LED_BUILTIN, &on, 200);
   }
 
   digitalWrite(LED_BUILTIN, HIGH);
 }
 
-void getEnvValues(float* temperature, float* humidity) {
+bool getEnvValues(float* temperature, float* humidity) {
   digitalWrite(AHT_PWR, HIGH);
   uint8_t status = aht.readRawData();
-  if (status == AHT10_ERROR) {
-    bool on = false;
-    while (true) {
-      blinkLed(LED_BUILTIN, &on, 200);
-    }
+  if (status != AHT10_ERROR) {
+    *temperature = aht.readTemperature(AHT10_USE_READ_DATA);
+    *humidity = aht.readHumidity(AHT10_USE_READ_DATA);
   }
-  *temperature = aht.readTemperature(AHT10_USE_READ_DATA);
-  *humidity = aht.readHumidity(AHT10_USE_READ_DATA);
+  return status != AHT10_ERROR;
 }
 
-void sendValues(float* temperature, float* humidity) {
+bool post(const char* url, String& payload) {
   WiFiClient client;
   HTTPClient http;
-  if (http.begin(client, "192.168.1.4", 7654, "/new")) {
-    String payload = String("{\"id\":") + 0 + ",\"temperature\":" + *temperature + ",\"humidity\":" + *humidity + "}\n";
-    http.POST(payload);
+
+  int httpCode = 0;
+  if (http.begin(client, QUOTE(SERVER_HOST), SERVER_PORT, url)) {
+    http.addHeader("Content-Type", "application/json");
+    httpCode = http.POST(payload);
   }
   http.end();
   client.stop();
+#ifdef ERROR_NOTIFY_LED
+  if (httpCode != HTTP_CODE_OK) {
+    bool on = false;
+    for (int i = 0; i < 20; i++) {
+      blinkLed(LED_BUILTIN, &on, 50);
+    }
+    delay(200);
+  }
+#endif
+  return httpCode == HTTP_CODE_OK;
+}
+
+bool sendValues(float* temperature, float* humidity) {
+  String payload = String("{\"id\":") + deviceId + ",\"temperature\":" + *temperature + ",\"humidity\":" + *humidity + "}\n";
+  return post("/api/new", payload);
+}
+
+bool sendError(const char* message) {
+  String payload = String("{\"id\":") + deviceId + ",\"error\":\"" + message + "\"}";
+  return post("/api/error", payload);
 }
 
 void setup() {
   pinMode(AHT_PWR, OUTPUT);
   digitalWrite(AHT_PWR, LOW);
+  deviceId = getDeviceId();
   connectAht();
 }
 
@@ -89,12 +136,21 @@ void loop() {
   while (WiFi.status() != WL_CONNECTED) {
     connectWifi();
   }
-  float temperature;
-  float humidity;
-  getEnvValues(&temperature, &humidity);
-  sendValues(&temperature, &humidity);
+  float temperature = 0;
+  float humidity = 0;
+  if (getEnvValues(&temperature, &humidity)) {
+    sendValues(&temperature, &humidity);
+  } else {
+    sendError("Sensor Error!");
+#ifdef ERROR_NOTIFY_LED
+    bool on = false;
+    for (int i = 0; i < 10; i++) {
+      blinkLed(LED_BUILTIN, &on, 100);
+    }
+    delay(500);
+#endif
+  }
   WiFi.disconnect();
   digitalWrite(AHT_PWR, LOW);
-  ESP.deepSleep(6000000);
-  // delay(6000);
+  ESP.deepSleep(60000000);
 }
