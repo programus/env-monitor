@@ -8,5 +8,7 @@ fi
 
 echo "using ${DB_IMAGE} as db image."
 
+export DB_PORT=5506
+
 docker-compose $@
 
