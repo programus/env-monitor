@@ -10,8 +10,6 @@ services:
     volumes:
       - ./db/mysql:/var/lib/mysql
       - ./db/init.d:/docker-entrypoint-initdb.d
-      - /etc/timezone:/etc/timezone:ro
-      - /etc/localtime:/etc/localtime:ro
     environment:
       MYSQL_ROOT_PASSWORD: root-p4ssw0rd
       MYSQL_PASSWORD: 3nvRec
@@ -19,6 +17,7 @@ services:
       MYSQL_USER: envrec
       MYSQL_TCP_PORT: ${DB_PORT}
       MYSQL_UNIX_PORT: ${DB_PORT}
+      TZ: ${TZ}
     healthcheck:
       test:  mysqladmin ping -h 127.0.0.1 -u $$MYSQL_USER --password=$$MYSQL_PASSWORD || exit 1
       interval: 30s
