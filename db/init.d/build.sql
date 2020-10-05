@@ -25,6 +25,6 @@ CREATE VIEW IF NOT EXISTS v_errors AS SELECT
   device_id ,
   unix_time ,
   FROM_UNIXTIME(unix_time / 1000) AS human_time,
-  error ,
+  error
 FROM errors;
 
