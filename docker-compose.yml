@@ -3,23 +3,22 @@ services:
   db:
     image: ${DB_IMAGE}
     container_name: env-monitor-db
-    environment:
-      MYSQL_ROOT_PASSWORD: root-p4ssw0rd
-      MYSQL_DATABASE: envrec
-      MYSQL_USER: envrec
-      MYSQL_PASSWORD: 3nvRec
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    restart: unless-stopped
+    networks:
+      - backend
     volumes:
       - ./db/mysql:/var/lib/mysql
       - ./db/init.d:/docker-entrypoint-initdb.d
       - /etc/timezone:/etc/timezone:ro
       - /etc/localtime:/etc/localtime:ro
-    networks:
-      - backend
-    restart: on-failure
-    ports:
-      - ${DB_PORT}:${DB_PORT}
-    expose:
-      - ${DB_PORT}
+    environment:
+      MYSQL_ROOT_PASSWORD: root-p4ssw0rd
+      MYSQL_PASSWORD: 3nvRec
+      MYSQL_DATABASE: envrec
+      MYSQL_USER: envrec
+      MYSQL_TCP_PORT: ${DB_PORT}
+      MYSQL_UNIX_PORT: ${DB_PORT}
     healthcheck:
       test:  mysqladmin ping -h 127.0.0.1 -u $$MYSQL_USER --password=$$MYSQL_PASSWORD || exit 1
       interval: 30s
