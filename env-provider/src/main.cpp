@@ -8,8 +8,6 @@
 #define QUOTE(x) DO_QUOTE(x)
 #define VAR_NAME_VALUE(var) #var "="  QUOTE(var)
 
-#define AHT_PWR D8
-
 #if !defined(WIFI_SSID)
 #error WIFI_SSID must be defined! 
 #endif
@@ -28,6 +26,9 @@
 #pragma message(VAR_NAME_VALUE(WIFI_PASS))
 #pragma message(VAR_NAME_VALUE(SERVER_HOST))
 #pragma message(VAR_NAME_VALUE(SERVER_PORT))
+
+#define INTERVAL  120000000
+#define AHT_PWR   D8
 
 AHT10 aht(AHT10_ADDRESS_0X38);
 uint8_t deviceId = 0;
@@ -50,7 +51,7 @@ uint8_t getDeviceId() {
   uint8_t id = 0;
   for (int i = 0; i < len; i++) {
     id <<= 1;
-    id |= ~digitalRead(readPins[i]) & 1;
+    id |= digitalRead(readPins[i]);
   }
   digitalWrite(D3, LOW);
   return id;
@@ -133,6 +134,7 @@ void setup() {
 }
 
 void loop() {
+  uint64_t start = micros64();
   while (WiFi.status() != WL_CONNECTED) {
     connectWifi();
   }
@@ -152,5 +154,5 @@ void loop() {
   }
   WiFi.disconnect();
   digitalWrite(AHT_PWR, LOW);
-  ESP.deepSleep(60000000);
+  ESP.deepSleep(start + INTERVAL - micros64());
 }
