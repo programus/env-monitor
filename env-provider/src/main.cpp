@@ -30,6 +30,8 @@
 #define INTERVAL  120000000
 #define AHT_PWR   D8
 
+ADC_MODE(ADC_VCC);
+
 AHT10 aht(AHT10_ADDRESS_0X38);
 uint8_t deviceId = 0;
 
@@ -121,6 +123,11 @@ bool sendValues(float* temperature, float* humidity) {
   return post("/api/new", payload);
 }
 
+bool sendVoltage(uint16_t voltage) {
+  String payload = String("{\"id\":") + deviceId + ",\"vcc\":" + voltage + "}\n";
+  return post("/api/vcc", payload);
+}
+
 bool sendError(const char* message) {
   String payload = String("{\"id\":") + deviceId + ",\"error\":\"" + message + "\"}";
   return post("/api/error", payload);
@@ -152,6 +159,7 @@ void loop() {
     delay(500);
 #endif
   }
+  sendVoltage(ESP.getVcc());
   WiFi.disconnect();
   digitalWrite(AHT_PWR, LOW);
   ESP.deepSleep(start + INTERVAL - micros64());
