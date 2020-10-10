@@ -32,7 +32,7 @@ CREATE TABLE IF NOT EXISTS vcc_last (
   device_id TINYINT UNSIGNED NOT NULL,
   unix_time BIGINT NOT NULL,
   vcc SMALLINT UNSIGNED NOT NULL,
-  PRIMARY KEY(device_id, unix_time)
+  PRIMARY KEY(device_id)
 );
 
 CREATE VIEW IF NOT EXISTS v_vcc_last AS SELECT 
