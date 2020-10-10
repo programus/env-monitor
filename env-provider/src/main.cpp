@@ -15,10 +15,10 @@
 #error WIFI_PASS must be defined! 
 #endif
 #if !defined(SERVER_HOST)
-#define SERVER_HOST "192.168.1.4"
+#error SERVER_HOST must be defined! 
 #endif
 #if !defined(SERVER_PORT)
-#define SERVER_PORT 3000
+#error SERVER_PORT must be defined! 
 #endif
 
 // print env var while compiling
