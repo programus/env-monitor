@@ -163,4 +163,5 @@ void loop() {
   WiFi.disconnect();
   digitalWrite(AHT_PWR, LOW);
   ESP.deepSleep(start + INTERVAL - micros64());
+  ESP.restart();
 }
