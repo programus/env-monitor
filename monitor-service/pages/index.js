@@ -1,65 +1,84 @@
+import React from 'react'
 import Head from 'next/head'
 import styles from '../styles/Home.module.css'
+import axios from 'axios'
+export default class Home extends React.Component {
+  constructor(props) {
+    super(props)
+    this.state = {
+      positions: [],
+      envs: [],
+    }
+    this.initState()
+  }
 
-export default function Home() {
-  return (
-    <div className={styles.container}>
-      <Head>
-        <title>Create Next App</title>
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
+  async initState() {
+    const {data} = await axios.get('/api/positions')
+    this.setState({
+      positions: data.results,
+    })
 
-      <main className={styles.main}>
-        <h1 className={styles.title}>
-          Welcome to <a href="https://nextjs.org">Next.js!</a>
-        </h1>
+    this.keepRefrehsingEnvs()
+  }
 
-        <p className={styles.description}>
-          Get started by editing{' '}
-          <code className={styles.code}>pages/index.js</code>
-        </p>
+  async keepRefrehsingEnvs() {
+    const envs = await Promise.all(this.state.positions.map(async p => {
+      const {device_id, position_name, position_desc} = p
+      const {data} = await axios.get(`/api/latest?id=${device_id}`)
+      return {
+        ...p,
+        ...data.results[0],
+      }
+    }))
+    console.log(envs)
 
-        <div className={styles.grid}>
-          <a href="https://nextjs.org/docs" className={styles.card}>
-            <h3>Documentation &rarr;</h3>
-            <p>Find in-depth information about Next.js features and API.</p>
-          </a>
+    this.setState({
+      envs,
+    })
 
-          <a href="https://nextjs.org/learn" className={styles.card}>
-            <h3>Learn &rarr;</h3>
-            <p>Learn about Next.js in an interactive course with quizzes!</p>
-          </a>
+    setTimeout(() => this.keepRefrehsingEnvs(), 60000)
+  }
 
+  render() {
+    return (
+      <div className={styles.container}>
+        <Head>
+          <title>Home Temperature & Humidity</title>
+          <link rel="icon" href="/favicon.ico" />
+        </Head>
+
+        <main className={styles.main}>
+          <h1 className={styles.title}> </h1>
+
+          <p className={styles.description}>
+          T & H for each room
+          </p>
+
+          <div className={styles.grid}>
+            {
+              this.state.envs.map(e => 
+                <div className={styles.card} key={e.device_id}>
+                  <h3>{e.position_name}</h3>
+                  <div>T: {e.temperature}℃</div>
+                  <div>H: {e.humidity}%</div>
+                  <div>{new Date(e.date_time).toString()}</div>
+                </div>
+              )
+            }
+          </div>
+        </main>
+
+        <footer className={styles.footer}>
           <a
-            href="https://github.com/vercel/next.js/tree/master/examples"
-            className={styles.card}
+            href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
+            target="_blank"
+            rel="noopener noreferrer"
           >
-            <h3>Examples &rarr;</h3>
-            <p>Discover and deploy boilerplate example Next.js projects.</p>
+            Powered by{' '}
+            <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
           </a>
-
-          <a
-            href="https://vercel.com/import?filter=next.js&utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-            className={styles.card}
-          >
-            <h3>Deploy &rarr;</h3>
-            <p>
-              Instantly deploy your Next.js site to a public URL with Vercel.
-            </p>
-          </a>
-        </div>
-      </main>
-
-      <footer className={styles.footer}>
-        <a
-          href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Powered by{' '}
-          <img src="/vercel.svg" alt="Vercel Logo" className={styles.logo} />
-        </a>
-      </footer>
-    </div>
-  )
+        </footer>
+      </div>
+    )
+  }
 }
