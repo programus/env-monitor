@@ -41,3 +41,13 @@ CREATE VIEW IF NOT EXISTS v_vcc_last AS SELECT
   FROM_UNIXTIME(unix_time / 1000) AS human_time,
   vcc
 FROM vcc_last;
+
+CREATE TABLE IF NOT EXISTS m_positions (
+  position_id INT UNSIGNED NOT NULL,
+  device_id TINYINT UNSIGNED NOT NULL,
+  display_order INT NOT NULL DEFAULT 0,
+  position_name VARCHAR(16) NOT NULL DEFAULT '',
+  position_desc VARCHAR(512) NOT NULL DEFAULT '',
+  PRIMARY KEY(position_id)
+);
+
