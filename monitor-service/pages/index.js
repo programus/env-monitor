@@ -6,7 +6,7 @@ import moment from 'moment'
 import ReactEcharts from 'echarts-for-react'
 
 export default class Home extends React.Component {
-  dateTimeFormat = 'YYYY-MM-DD hh:mm:ss'
+  dateTimeFormat = 'YYYY-MM-DD HH:mm:ss'
 
   constructor(props) {
     super(props)
