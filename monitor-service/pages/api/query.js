@@ -11,6 +11,10 @@ export default async (req, res) => {
           ROUND(unix_time / ${unitMs}) * ${unitMs} as date_time, 
           AVG(temperature) AS temperature,
           AVG(humidity) AS humidity,
+          MIN(temperature) AS min_temperature,
+          MIN(humidity) AS min_humidity,
+          MAX(temperature) AS max_temperature,
+          MAX(humidity) AS max_humidity,
           COUNT(*) AS sample_count 
         FROM env_records 
         WHERE 
