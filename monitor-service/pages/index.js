@@ -98,8 +98,8 @@ export default class Home extends React.Component {
 
   async updateCharts() {
     const to = new Date().getTime()
-    const from = 0
     const unit = 60
+    const from = to - unit * 60000 * 1000 // display max 1000 points
     const rawData = await Promise.all(this.state.positions.map(async p => {
       const {device_id} = p
       const {data} = await axios.get(`/api/query?id=${device_id}&from=${from}&to=${to}&unit=${unit}`)
@@ -124,7 +124,7 @@ export default class Home extends React.Component {
         // data: this.getXAxis(rawData, unit),
       },
       dataZoom: [{
-        startValue: new Date().getTime() - 3 * 24 * 3600 * 1000,
+        // startValue: new Date().getTime() - 3 * 24 * 3600 * 1000,
       }, {
         type: 'slider',
       }],
@@ -165,8 +165,10 @@ export default class Home extends React.Component {
   }
 
   async keepRefrehsingEnvs() {
-    await this.updateLatestEnvs()
-    await this.updateCharts()
+    await Promise.all([
+      this.updateLatestEnvs(),
+      this.updateCharts(),
+    ])
     setTimeout(() => this.keepRefrehsingEnvs(), 60000)
   }
 
