@@ -90,7 +90,7 @@ export default class Home extends React.Component {
         type: 'line',
         data: results.map(r => [
           r.date_time, 
-          r[type],
+          r[type].toFixed(2),
         ]),
       }
     })
