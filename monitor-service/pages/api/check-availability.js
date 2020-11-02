@@ -49,7 +49,7 @@ export default async (req, res) => {
       })
       const sortedDiffs = recent.slice(1).map((r, i) => recent[i].date_time - r.date_time ).sort()
       if (sortedDiffs.length > 3) {
-        const last = recent[recent.length - 1]
+        const last = recent[0]
         const medianDiff = sortedDiffs[parseInt(sortedDiffs.length / 2)]
         const checkInterval = (process.env.CHECK_INTERVAL || 60) * 60000  // min -> ms
         const reportInterval = (process.env.REPORT_INTERVAL || Infinity) * 60000 // min -> ms
