@@ -27,8 +27,9 @@
 #pragma message(VAR_NAME_VALUE(SERVER_HOST))
 #pragma message(VAR_NAME_VALUE(SERVER_PORT))
 
-#define INTERVAL  120000000
-#define AHT_PWR   D8
+#define INTERVAL    120000000
+#define AHT_PWR     D8
+#define RETRY_COUNT 10
 
 ADC_MODE(ADC_VCC);
 
@@ -65,7 +66,7 @@ void connectAht() {
   // init AHT
   bool on = false;
   pinMode(LED_BUILTIN, OUTPUT);
-  while (!aht.begin()) {
+  for (int retry = 0; retry < RETRY_COUNT || !aht.begin(); retry++) {
     blinkLed(LED_BUILTIN, &on, 100);
   }
   digitalWrite(LED_BUILTIN, HIGH);
@@ -77,8 +78,7 @@ void connectWifi() {
 
   WiFi.begin(QUOTE(WIFI_SSID), QUOTE(WIFI_PASS));
 
-  while (WiFi.status() != WL_CONNECTED)
-  {
+  for (int retry = 0; retry < RETRY_COUNT || WiFi.status() != WL_CONNECTED; retry++) {
     blinkLed(LED_BUILTIN, &on, 200);
   }
 
@@ -142,7 +142,7 @@ void setup() {
 
 void loop() {
   uint64_t start = micros64();
-  while (WiFi.status() != WL_CONNECTED) {
+  if (WiFi.status() != WL_CONNECTED) {
     connectWifi();
   }
   float temperature = 0;
